@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for better visual appeal if needed */
+        .timer-display {
+            transition: color 0.3s ease-in-out;
+        }
+        .progress-bar-fill {
+            transition: width 0.5s ease-in-out, background-color 0.3s ease-in-out;
+        }
+         /* Custom modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem; /* 12px */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .modal-button {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem; /* 6px */
+            font-weight: 500;
+            cursor: pointer;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-md">
+        <div class="text-center mb-6 sm:mb-8">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600"><path d="M10 2h4"></path><path d="M12 14v-4"></path><path d="M4 13a8 8 0 0 1 8-7 8 8 0 1 1-5.3 14L4 17.6"></path><path d="M9 17H4v5"></path></svg>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Pomodoro Timer</h1>
+            </div>
+            <p class="text-gray-600">Session <span id="currentSessionDisplay">1</span> • Total: <span id="totalSessionsDisplay">0</span></p>
+        </div>
+
+        <div class="text-center mb-6 sm:mb-8">
+            <div id="timerDisplay" class="text-5xl sm:text-6xl font-mono font-bold mb-2 text-indigo-600 timer-display">
+                25:00
+            </div>
+            <p id="timerLabel" class="text-lg font-medium text-indigo-600">
+                Work Time
+            </p>
+        </div>
+
+        <div class="flex justify-center gap-3 sm:gap-4 mb-6">
+            <button id="startPauseButton" class="flex items-center gap-2 px-5 py-3 sm:px-6 sm:py-3 rounded-lg font-medium transition-colors bg-indigo-500 hover:bg-indigo-600 text-white">
+                <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <svg id="pauseIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                <span id="startPauseText">Start</span>
+            </button>
+            
+            <button id="resetButton" class="flex items-center gap-2 px-5 py-3 sm:px-6 sm:py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"></path><path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path><path d="M21 22v-6h-6"></path><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path></svg>
+                Reset
+            </button>
+        </div>
+
+        <div class="text-center mb-4">
+            <button id="settingsButton" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Settings
+            </button>
+        </div>
+
+        <div id="settingsPanel" class="bg-gray-50 rounded-lg p-6 mb-4 hidden">
+            <h3 class="font-semibold text-gray-800 mb-4 text-lg">Timer Settings</h3>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="workMinutesInput" class="block text-sm font-medium text-gray-700 mb-1">
+                        Work Duration (minutes)
+                    </label>
+                    <input type="number" id="workMinutesInput" min="1" max="90" value="25" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="enableBreaksInput" checked class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    <label for="enableBreaksInput" class="text-sm font-medium text-gray-700">
+                        Enable breaks
+                    </label>
+                </div>
+
+                <div id="breakDurationSetting">
+                    <label for="breakMinutesInput" class="block text-sm font-medium text-gray-700 mb-1">
+                        Break Duration (minutes)
+                    </label>
+                    <input type="number" id="breakMinutesInput" min="1" max="30" value="5" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                    <button id="applySettingsButton" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-2.5 rounded-md font-medium transition-colors">
+                        Apply Settings
+                    </button>
+                    <button id="resetSessionButton" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-md font-medium transition-colors">
+                        Reset All Sessions
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div id="progressBar" class="h-2.5 rounded-full progress-bar-fill bg-indigo-500" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div id="notificationModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modalTitle" class="text-xl font-semibold mb-3">Notification</h3>
+            <p id="modalMessage" class="text-gray-700"></p>
+            <button id="modalCloseButton" class="modal-button bg-indigo-500 hover:bg-indigo-600 text-white">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerLabel = document.getElementById('timerLabel');
+        const startPauseButton = document.getElementById('startPauseButton');
+        const startPauseText = document.getElementById('startPauseText');
+        const playIcon = document.getElementById('playIcon');
+        const pauseIcon = document.getElementById('pauseIcon');
+        const resetButton = document.getElementById('resetButton');
+        const settingsButton = document.getElementById('settingsButton');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const workMinutesInput = document.getElementById('workMinutesInput');
+        const breakMinutesInput = document.getElementById('breakMinutesInput');
+        const enableBreaksInput = document.getElementById('enableBreaksInput');
+        const breakDurationSetting = document.getElementById('breakDurationSetting');
+        const applySettingsButton = document.getElementById('applySettingsButton');
+        const resetSessionButton = document.getElementById('resetSessionButton');
+        const currentSessionDisplay = document.getElementById('currentSessionDisplay');
+        const totalSessionsDisplay = document.getElementById('totalSessionsDisplay');
+        const progressBar = document.getElementById('progressBar');
+
+        // Modal elements
+        const notificationModal = document.getElementById('notificationModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const modalCloseButton = document.getElementById('modalCloseButton');
+
+        // Timer State
+        let workMinutes = 25;
+        let breakMinutes = 5;
+        let enableBreaks = true;
+        let currentSession = 1;
+        let totalSessions = 0;
+        let timeLeft = workMinutes * 60;
+        let isActive = false;
+        let isBreak = false;
+        let intervalId = null;
+
+        // --- Utility Functions ---
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            timerDisplay.textContent = formatTime(timeLeft);
+            document.title = `${formatTime(timeLeft)} - ${isBreak ? 'Break' : 'Work'}`; // Update browser tab title
+            
+            if (isBreak) {
+                timerLabel.textContent = 'Break Time';
+                timerDisplay.classList.remove('text-indigo-600');
+                timerDisplay.classList.add('text-green-600');
+                progressBar.classList.remove('bg-indigo-500');
+                progressBar.classList.add('bg-green-500');
+            } else {
+                timerLabel.textContent = 'Work Time';
+                timerDisplay.classList.remove('text-green-600');
+                timerDisplay.classList.add('text-indigo-600');
+                progressBar.classList.remove('bg-green-500');
+                progressBar.classList.add('bg-indigo-500');
+            }
+
+            currentSessionDisplay.textContent = currentSession;
+            totalSessionsDisplay.textContent = totalSessions;
+
+            // Update progress bar
+            const totalDuration = isBreak ? breakMinutes * 60 : workMinutes * 60;
+            const percentage = totalDuration > 0 ? ((totalDuration - timeLeft) / totalDuration) * 100 : 0;
+            progressBar.style.width = `${percentage}%`;
+        }
+        
+        function showNotification(title, message) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            notificationModal.classList.remove('hidden');
+        }
+
+        function closeNotification() {
+            notificationModal.classList.add('hidden');
+        }
+
+        // --- Timer Logic ---
+        function startTimer() {
+            isActive = true;
+            startPauseText.textContent = 'Pause';
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+            startPauseButton.classList.remove('bg-indigo-500', 'hover:bg-indigo-600');
+            startPauseButton.classList.add('bg-orange-500', 'hover:bg-orange-600');
+
+            intervalId = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(intervalId);
+                    isActive = false;
+                    handleSessionEnd();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            isActive = false;
+            clearInterval(intervalId);
+            startPauseText.textContent = 'Start';
+            pauseIcon.classList.add('hidden');
+            playIcon.classList.remove('hidden');
+            startPauseButton.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            startPauseButton.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
+        }
+
+        function handleSessionEnd() {
+            // Play a sound (optional - browser might block autoplay)
+            // const audio = new Audio('path/to/notification-sound.mp3'); // Replace with actual sound file
+            // audio.play().catch(e => console.warn("Audio play failed:", e));
+
+
+            if (isBreak || !enableBreaks) {
+                // Break finished or no breaks enabled, start next work session
+                isBreak = false;
+                currentSession++;
+                timeLeft = workMinutes * 60;
+                showNotification('Break Over!', 'Time to get back to work.');
+            } else {
+                // Work session finished
+                totalSessions++; // Increment total sessions only after a work session
+                if (enableBreaks) {
+                    isBreak = true;
+                    timeLeft = breakMinutes * 60;
+                    showNotification('Work Session Complete!', `Time for a ${breakMinutes}-minute break.`);
+                } else {
+                    // No breaks, start next work session
+                    currentSession++;
+                    timeLeft = workMinutes * 60;
+                    showNotification('Work Session Complete!', 'Starting next work session.');
+                }
+            }
+            // Reset button to "Start"
+            startPauseText.textContent = 'Start';
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+            startPauseButton.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+            startPauseButton.classList.add('bg-indigo-500', 'hover:bg-indigo-600');
+            updateDisplay();
+        }
+
+        // --- Event Listeners ---
+        startPauseButton.addEventListener('click', () => {
+            if (isActive) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        resetButton.addEventListener('click', () => {
+            pauseTimer(); // Stop the timer if active
+            timeLeft = isBreak ? breakMinutes * 60 : workMinutes * 60; // Reset to current session's start
+            updateDisplay();
+        });
+
+        settingsButton.addEventListener('click', () => {
+            settingsPanel.classList.toggle('hidden');
+        });
+
+        enableBreaksInput.addEventListener('change', () => {
+            breakDurationSetting.style.display = enableBreaksInput.checked ? 'block' : 'none';
+        });
+
+        applySettingsButton.addEventListener('click', () => {
+            const newWorkMinutes = parseInt(workMinutesInput.value);
+            const newBreakMinutes = parseInt(breakMinutesInput.value);
+
+            if (isNaN(newWorkMinutes) || newWorkMinutes < 1 || newWorkMinutes > 90) {
+                showNotification('Invalid Input', 'Work duration must be between 1 and 90 minutes.');
+                workMinutesInput.focus();
+                return;
+            }
+            if (enableBreaksInput.checked && (isNaN(newBreakMinutes) || newBreakMinutes < 1 || newBreakMinutes > 30)) {
+                 showNotification('Invalid Input', 'Break duration must be between 1 and 30 minutes.');
+                breakMinutesInput.focus();
+                return;
+            }
+
+
+            workMinutes = newWorkMinutes;
+            breakMinutes = newBreakMinutes;
+            enableBreaks = enableBreaksInput.checked;
+
+            pauseTimer(); // Stop timer
+            isBreak = false; // Reset to work session
+            // Only reset timeLeft if not active or if settings change current session type
+            if (!isActive) {
+                 timeLeft = workMinutes * 60;
+            } else {
+                // If timer was active and it was a break, but breaks got disabled
+                if(isBreak && !enableBreaks) {
+                    isBreak = false;
+                    timeLeft = workMinutes * 60;
+                } else if (!isBreak) { // If it was a work session
+                     timeLeft = workMinutes * 60;
+                } else { // If it was a break and breaks are still enabled
+                    timeLeft = breakMinutes * 60;
+                }
+            }
+            
+            updateDisplay();
+            settingsPanel.classList.add('hidden');
+            showNotification('Settings Applied', 'Timer settings have been updated.');
+        });
+
+        resetSessionButton.addEventListener('click', () => {
+            pauseTimer();
+            currentSession = 1;
+            totalSessions = 0;
+            isBreak = false;
+            timeLeft = workMinutes * 60; // Reset to work session with current workMinutes
+            updateDisplay();
+            settingsPanel.classList.add('hidden'); // Optionally close settings
+            showNotification('Sessions Reset', 'All session counts have been reset.');
+        });
+        
+        modalCloseButton.addEventListener('click', closeNotification);
+
+        // Initial Setup
+        workMinutesInput.value = workMinutes;
+        breakMinutesInput.value = breakMinutes;
+        enableBreaksInput.checked = enableBreaks;
+        breakDurationSetting.style.display = enableBreaks ? 'block' : 'none';
+        updateDisplay(); // Initial display update
+
+    </script>
+</body>
+</html>
